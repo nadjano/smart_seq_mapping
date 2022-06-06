@@ -1,0 +1,3 @@
+name: fastq-pair
+dependencies:
+        - bioconda::fastq-pair=1.0

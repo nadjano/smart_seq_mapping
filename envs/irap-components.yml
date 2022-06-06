@@ -1,0 +1,7 @@
+name: irap-components
+channels:
+        - conda-forge
+        - bioconda
+        - defaults
+dependencies:
+        - ebi-gene-expression-group::irap-components
