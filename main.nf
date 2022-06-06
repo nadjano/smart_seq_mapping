@@ -815,8 +815,6 @@ process merge_tpm_chunk_matrices {
 KALLISTO_CHUNK_STATS
     .collectFile( sort: true, name: "kallisto_stats.tsv", storeDir: "${resultsRoot}/matrices", keepHeader: true )
 
-ALEVIN_CHUNK_STATS
-    .collectFile( sort: true, name: "alevin_stats.tsv", storeDir: "${resultsRoot}/matrices", keepHeader: true )
 // Check the total number of runs we have 
 
 KALLISTO_SINGLE
