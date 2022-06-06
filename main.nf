@@ -4,6 +4,9 @@
 sdrfFile = params.sdrf
 resultsRoot = params.resultsRoot
 transcriptomeIndex = params.transcriptomeIndex
+transcriptToGene = params.transcriptToGene
+
+TRANSCRIPT_TO_GENE= Channel.fromPath(transcriptToGene,checkIfExists: true).first()
 
 manualDownloadFolder =''
 if ( params.containsKey('manualDownloadFolder')){
@@ -637,10 +640,179 @@ process kallisto_paired {
         """
 }
 
+KALLISTO_SINGLE
+    .concat(KALLISTO_PAIRED)
+    .set{ KALLISTO_RESULTS } 
 
 
+process chunk_kallisto {
+
+    executor 'local'
+
+    input:
+        file(kallistoResults) from KALLISTO_RESULTS
+
+    output: 
+        file("chunks/*") into KALLISTO_CHUNKS
+
+    """
+        mkdir -p chunks
+        split -l ${params.chunkSize} ${kallistoResults} chunks/
+    """
+
+}
+
+// Note: we can call tximport in different ways to create different matrix types 
+
+process kallisto_gene_count_matrix {
+    
+    conda "${baseDir}/envs/kallisto_matrix.yml"
+
+    cache 'deep'
+
+    memory { 2.GB * task.attempt }
+    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+    maxRetries 20
+
+    input:
+        file tx2Gene from TRANSCRIPT_TO_GENE.first()
+        set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
+
+    output:
+        set val(protocol), file("counts_mtx") into KALLISTO_CHUNK_COUNT_MATRICES
+        set val(protocol), file("tpm_mtx") into KALLISTO_CHUNK_ABUNDANCE_MATRICES
+        file("kallisto_stats.tsv") into KALLISTO_CHUNK_STATS
+
+    script:
+
+        def txOut
+        if ( expressionLevel == 'transcript' ){
+            txOut = 'TRUE'
+        }else{
+            txOut = 'FALSE'
+        }
+
+        script:
+
+            """
+            # Some transcripts have identifiers that look annoyingly like versions 
+            ignoreTxVersion=${params.reference.ignoreTxVersion}
+            example_file=\$(head -n 1 ${kallistoChunk})
+            example_id=\$(sed '2q;d'  \${example_file/\\.h5/.tsv} | awk '{print \$1}')
+            grep -P "^\$example_id\t" tx2gene > /dev/null
+            # If the full identifier matches, then we shouldn't try to ignore a version
+            if [ \$? -eq 0 ]; then
+                ignoreTxVersion=FALSE
+            fi
+            sed -e 's/\t/,/g' ${tx2Gene} > ${tx2Gene}.csv
+            tximport.R --files=${kallistoChunk} --type=kallisto --tx2gene=${tx2Gene}.csv \
+                --countsFromAbundance=$expressionScaling --ignoreTxVersion=\$ignoreTxVersion --txOut=$txOut \
+                --outputCountsFile=counts_mtx/matrix.mtx \
+                --outputAbundancesFile=tpm_mtx/matrix.mtx \
+                --outputStatsFile=kallisto_stats.tsv
+            """
+}
 
 
+    (KALLISTO_CHUNK_COUNT_MATRICES)
+    .groupTuple()
+    .set { PROTOCOL_COUNT_CHUNKS }
+
+KALLISTO_CHUNK_ABUNDANCE_MATRICES
+    .groupTuple()
+    .set { PROTOCOL_KALLISTO_ABUNDANCE_CHUNKS }
+
+process merge_count_chunk_matrices {
+    
+    conda "${baseDir}/envs/kallisto_matrix.yml"
+
+    cache 'lenient'
+    
+    memory { 5.GB * task.attempt }
+    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+    maxRetries 20
+    
+    input:
+        set val(protocol), file('dir??/*') from PROTOCOL_COUNT_CHUNKS
+
+    output:
+        file("counts_mtx_${protocol}") into PROTOCOL_COUNT_MATRICES
+
+    """
+        find \$(pwd) -name 'counts_mtx' > dirs.txt
+        ndirs=\$(cat dirs.txt | wc -l)
+        if [ "\$ndirs" -gt 1 ]; then 
+            mergeMtx.R dirs.txt counts_mtx_${protocol}
+        else
+            ln -s \$(cat dirs.txt) counts_mtx_${protocol}
+        fi
+        rm -f dirs.txt
+    """
+}
+
+// Merge the sub-experiments corresponding to different protocols
+
+process merge_protocol_count_matrices {
+    
+    conda "${baseDir}/envs/kallisto_matrix.yml"
+
+    cache 'lenient'
+    
+    memory { 5.GB * task.attempt }
+    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+    maxRetries 20
+    
+    publishDir "$resultsRoot/matrices", mode: 'copy', overwrite: true
+    
+    input:
+        file('*') from PROTOCOL_COUNT_MATRICES.collect()
+
+    output:
+        file("counts_mtx.zip") into EXP_COUNT_MATRICES
+
+    """
+        find \$(pwd) -name 'counts_mtx_*' > dirs.txt
+        
+        ndirs=\$(cat dirs.txt | wc -l)
+        if [ "\$ndirs" -gt 1 ]; then 
+            mergeMtx.R dirs.txt counts_mtx
+        else
+            ln -s \$(cat dirs.txt) counts_mtx
+        fi
+        rm -f dirs.txt
+        zip -r counts_mtx.zip counts_mtx
+    """
+}
+
+process merge_tpm_chunk_matrices {
+
+    conda "${baseDir}/envs/kallisto_matrix.yml"
+    
+    memory { 5.GB * task.attempt }
+    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+    maxRetries 20
+    
+    publishDir "$resultsRoot/matrices", mode: 'copy', overwrite: true
+    
+    input:
+        set val(protocol), file('dir??/*') from PROTOCOL_KALLISTO_ABUNDANCE_CHUNKS
+
+    output:
+        set val(protocol), file("tpm_mtx.zip")
+
+    """
+        find . -name 'tpm_mtx' > dirs.txt
+        mergeMtx.R dirs.txt tpm_mtx
+        rm -f dirs.txt
+        zip -r tpm_mtx.zip tpm_mtx
+    """
+}
+
+KALLISTO_CHUNK_STATS
+    .collectFile( sort: true, name: "kallisto_stats.tsv", storeDir: "${resultsRoot}/matrices", keepHeader: true )
+
+ALEVIN_CHUNK_STATS
+    .collectFile( sort: true, name: "alevin_stats.tsv", storeDir: "${resultsRoot}/matrices", keepHeader: true )
 // Check the total number of runs we have 
 
 KALLISTO_SINGLE
@@ -685,5 +857,9 @@ process validate_results {
     fi
     """
 }   
+
+
+
+
 
 
