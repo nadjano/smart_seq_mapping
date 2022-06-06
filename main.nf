@@ -5,7 +5,7 @@ resultsRoot = params.resultsRoot
 transcriptomeIndex = params.transcriptomeIndex
 transcriptToGene = params.transcriptToGene
 
-TRANSCRIPT_TO_GENE= Channel.fromPath(transcriptToGene,checkIfExists: true).first()
+TRANSCRIPT_TO_GENE= Channel.fromPath(transcriptToGene,checkIfExists: true)
 
 manualDownloadFolder =''
 if ( params.containsKey('manualDownloadFolder')){
@@ -660,6 +660,11 @@ process chunk_kallisto {
     """
 
 }
+// Flatten the chunk list
+
+KALLISTO_CHUNKS
+    .transpose()
+    .set { FLATTENED_KALLISTO_CHUNKS }
 
 // Note: we can call tximport in different ways to create different matrix types 
 
