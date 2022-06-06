@@ -1,4 +1,3 @@
-
 #!/usr/bin/env nextflow
 
 sdrfFile = params.sdrf
