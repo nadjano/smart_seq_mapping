@@ -817,48 +817,48 @@ KALLISTO_CHUNK_STATS
 
 // Check the total number of runs we have 
 
-KALLISTO_SINGLE
-    .concat(KALLISTO_PAIRED)
-    .count()
-    .set{ KALLISTO_RESULTS_COUNT } 
+// KALLISTO_SINGLE
+//     .concat(KALLISTO_PAIRED)
+//     .count()
+//     .set{ KALLISTO_RESULTS_COUNT } 
 
-process validate_results {
+// process validate_results {
     
-    executor 'local'
+//     executor 'local'
     
-    errorStrategy 'finish'  
+//     errorStrategy 'finish'  
     
-    input:
-        val(kallistoResultCount) from KALLISTO_RESULTS_COUNT 
-        val(runCount) from RUN_COUNT
-        val(targetCount) from TARGET_COUNT
-        val(filteredFastqRunCount) from FILTERED_FASTQ_RUN_COUNT
-        val(filteredNonemptyFastqRunCount) from FILTERED_NONEMPTY_FASTQ_RUN_COUNT
-        file(finalCounts) from FINAL_COUNTS
+//     input:
+//         val(kallistoResultCount) from KALLISTO_RESULTS_COUNT 
+//         val(runCount) from RUN_COUNT
+//         val(targetCount) from TARGET_COUNT
+//         val(filteredFastqRunCount) from FILTERED_FASTQ_RUN_COUNT
+//         val(filteredNonemptyFastqRunCount) from FILTERED_NONEMPTY_FASTQ_RUN_COUNT
+//         file(finalCounts) from FINAL_COUNTS
 
-    output:
-        stdout DONE
+//     output:
+//         stdout DONE
 
-    """
-    if [ "$kallistoResultCount" -ne "$targetCount" ]; then
+//     """
+//     if [ "$kallistoResultCount" -ne "$targetCount" ]; then
         
-        echo "Kallisto results count of $kallistoResultCount does not match expected results number ($targetCount)" 1>&2
+//         echo "Kallisto results count of $kallistoResultCount does not match expected results number ($targetCount)" 1>&2
 
-        if [ "$filteredFastqRunCount" -ne "$runCount" ]; then
-            echo "... filtering failed" 1>&2
-            exit 1
-        elif [ "$filteredNonemptyFastqRunCount" -ne "$filteredFastqRunCount" ]; then
-            echo "... this is just because filtering removed some runs" 1>&2
-            exit 0
-        else
-            echo "... unrecoverable errors may have occurred at quantification" 1>&2
-            exit 1 
-        fi
-    else
-        echo "Kallisto results count of $kallistoResultCount matches expected results number ($targetCount)"
-    fi
-    """
-}   
+//         if [ "$filteredFastqRunCount" -ne "$runCount" ]; then
+//             echo "... filtering failed" 1>&2
+//             exit 1
+//         elif [ "$filteredNonemptyFastqRunCount" -ne "$filteredFastqRunCount" ]; then
+//             echo "... this is just because filtering removed some runs" 1>&2
+//             exit 0
+//         else
+//             echo "... unrecoverable errors may have occurred at quantification" 1>&2
+//             exit 1 
+//         fi
+//     else
+//         echo "Kallisto results count of $kallistoResultCount matches expected results number ($targetCount)"
+//     fi
+//     """
+// }   
 
 
 
