@@ -1,0 +1,15 @@
+name: kallisto_matrix
+channels:
+  - conda-forge
+  - bioconda
+  - r
+dependencies:
+  - bioconductor-genomeinfodbdata
+  - bioconductor-tximport
+  - r-optparse
+  - r-readr
+  - r-rjson
+  - r-workflowscriptscommon
+  - r-matrix
+  - bioconductor-dropletutils
+  - tximport-scripts
