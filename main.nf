@@ -739,13 +739,13 @@ process merge_count_chunk_matrices {
     maxRetries 20
     
     input:
-        set val(protocol), file('dir??/*') from PROTOCOL_COUNT_CHUNKS
+        set val(protocol), file("counts_mtx*") into KALLISTO_CHUNK_COUNT_MATRICES
 
     output:
         file("counts_mtx_${protocol}") into PROTOCOL_COUNT_MATRICES
 
     """
-        find \$(pwd) -name 'counts_mtx' > dirs.txt
+        find \$(pwd) -name 'counts_mtx*' > dirs.txt
         ndirs=\$(cat dirs.txt | wc -l)
         if [ "\$ndirs" -gt 1 ]; then 
             mergeMtx.R dirs.txt counts_mtx_${protocol}
