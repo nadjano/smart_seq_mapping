@@ -645,13 +645,33 @@ KALLISTO_SINGLE
     .concat(KALLISTO_PAIRED)
     .set{ KALLISTO_RESULTS } 
 
+// Generate the sets of files for each Kallisto sub-directory
+
+process find_kallisto_results {
+    
+    executor 'local'
+    
+    input:
+        file('kallisto') from KALLISTO_RESULTS
+
+    output:
+        set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
+
+    """
+        dir=\$(readlink kallisto)
+        ls kallisto/*/abundance.h5 | while read -r l; do
+            echo \$(dirname \${dir})/\$l >> kallisto_results.txt
+        done
+    """
+}
+
 
 process chunk_kallisto {
 
     executor 'local'
 
     input:
-        file(kallistoResults) from KALLISTO_RESULTS
+        set val(protocol), file(kallistoResults) from KALLISTO_RESULTS_SET
 
     output: 
         file("chunks/*") into KALLISTO_CHUNKS
