@@ -652,14 +652,14 @@ process find_kallisto_results {
     executor 'local'
     
     input:
-        file('kallisto') from KALLISTO_RESULTS
+        file("${runId}") from KALLISTO_RESULTS
 
     output:
         set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
         dir=\$(readlink kallisto)
-        ls kallisto/*/abundance.h5 | while read -r l; do
+        ls ${runId}/abundance.h5 | while read -r l; do
             echo \$(dirname \${dir})/\$l >> kallisto_results.txt
         done
     """
