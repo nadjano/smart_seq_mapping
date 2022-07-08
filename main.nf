@@ -719,10 +719,10 @@ process kallisto_gene_count_matrix {
             """
 }
 
-
-    (KALLISTO_CHUNK_COUNT_MATRICES)
-    .groupTuple()
-    .set { PROTOCOL_COUNT_CHUNKS }
+// ALEVIN_CHUNK_COUNT_MATRICES
+//     (KALLISTO_CHUNK_COUNT_MATRICES)
+//     .groupTuple()
+//     .set { PROTOCOL_COUNT_CHUNKS }
 
 KALLISTO_CHUNK_ABUNDANCE_MATRICES
     .groupTuple()
