@@ -652,7 +652,7 @@ process find_kallisto_results {
     executor 'local'
     
     input:
-        file("${runId}") from KALLISTO_RESULTS
+        path("${runId}") from KALLISTO_RESULTS
 
     output:
         set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
