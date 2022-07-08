@@ -4,6 +4,8 @@ sdrfFile = params.sdrf
 resultsRoot = params.resultsRoot
 transcriptomeIndex = params.transcriptomeIndex
 transcriptToGene = params.transcriptToGene
+sdrfMeta = params.meta
+cellsFile = params.cells
 
 TRANSCRIPT_TO_GENE= Channel.fromPath(transcriptToGene,checkIfExists: true)
 
@@ -766,13 +768,13 @@ process merge_protocol_count_matrices {
     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
     maxRetries 20
     
-    publishDir "$resultsRoot/matrices", mode: 'copy', overwrite: true
+    //publishDir "$resultsRoot/${params.name}/matrices", mode: 'copy', overwrite: true
     
     input:
         file('*') from PROTOCOL_COUNT_MATRICES.collect()
 
     output:
-        file("counts_mtx.zip") into EXP_COUNT_MATRICES
+        file("counts_mtx") into EXP_COUNT_MATRICES
 
     """
         find \$(pwd) -name 'counts_mtx_*' > dirs.txt
@@ -784,33 +786,60 @@ process merge_protocol_count_matrices {
             ln -s \$(cat dirs.txt) counts_mtx
         fi
         rm -f dirs.txt
-        zip -r counts_mtx.zip counts_mtx
     """
 }
 
-process merge_tpm_chunk_matrices {
+process cell_metadata {
 
-    conda "${baseDir}/envs/kallisto_matrix.yml"
+
+    conda "${baseDir}/envs/parse_alevin_fry.yml"
+
+   
     
-    memory { 5.GB * task.attempt }
+    memory { 1.GB * task.attempt }
     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
     maxRetries 20
-    
-    publishDir "$resultsRoot/matrices", mode: 'copy', overwrite: true
-    
+
+    publishDir "$resultsRoot/${params.name}/", mode: 'copy', overwrite: true
+
     input:
-        set val(protocol), file('dir??/*') from PROTOCOL_KALLISTO_ABUNDANCE_CHUNKS
-
+    path("count_mtx") from EXP_COUNT_MATRICES
+    
+    
     output:
-        set val(protocol), file("tpm_mtx.zip")
+    set path("${params.name}_counts_mtx"), path("${params.name}.cell_metadata_nonempty.tsv") into FINAL_OUTPUT_NONEMPTY
+
+    
 
     """
-        find . -name 'tpm_mtx' > dirs.txt
-        mergeMtx.R dirs.txt tpm_mtx
-        rm -f dirs.txt
-        zip -r tpm_mtx.zip tpm_mtx
-    """
+    make_cell_metadata.py counts_mtx/barcodes.tsv $sdrfMeta $cellsFile ${params.name}.cell_metadata.tsv
+    """ 
+  
 }
+
+// process merge_tpm_chunk_matrices {
+
+//     conda "${baseDir}/envs/kallisto_matrix.yml"
+    
+//     memory { 5.GB * task.attempt }
+//     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+//     maxRetries 20
+    
+//     publishDir "$resultsRoot/matrices", mode: 'copy', overwrite: true
+    
+//     input:
+//         set val(protocol), file('dir??/*') from PROTOCOL_KALLISTO_ABUNDANCE_CHUNKS
+
+//     output:
+//         set val(protocol), file("tpm_mtx.zip")
+
+//     """
+//         find . -name 'tpm_mtx' > dirs.txt
+//         mergeMtx.R dirs.txt tpm_mtx
+//         rm -f dirs.txt
+//         zip -r tpm_mtx.zip tpm_mtx
+//     """
+// }
 
 KALLISTO_CHUNK_STATS
     .collectFile( sort: true, name: "kallisto_stats.tsv", storeDir: "${resultsRoot}/matrices", keepHeader: true )
