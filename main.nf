@@ -671,7 +671,7 @@ process chunk_kallisto {
     executor 'local'
 
     input:
-        set val(protocol), file(kallistoResults) from KALLISTO_RESULTS_SETS
+        set val(protocol), file(kallistoResults) from KALLISTO_RESULT_SETS
 
     output: 
         file("chunks/*") into KALLISTO_CHUNKS
