@@ -739,7 +739,7 @@ process merge_count_chunk_matrices {
     maxRetries 20
     
     input:
-        set val(protocol), file("counts_mtx*") into KALLISTO_CHUNK_COUNT_MATRICES
+        set val(protocol), file("counts_mtx*") from KALLISTO_CHUNK_COUNT_MATRICES
 
     output:
         file("counts_mtx_${protocol}") into PROTOCOL_COUNT_MATRICES
