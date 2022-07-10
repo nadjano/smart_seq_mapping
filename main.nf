@@ -588,6 +588,7 @@ process kallisto_single {
 
     output:
         path("${runId}") into KALLISTO_SINGLE
+        val(runId) into KALLISTO_SINGLE_ID
 
     script:
         
@@ -653,6 +654,7 @@ process find_kallisto_results {
     
     input:
         path("${runId}") from KALLISTO_RESULTS
+        val(runId) from KALLISTO_SINGLE_ID
 
     output:
         set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
