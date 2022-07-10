@@ -587,7 +587,7 @@ process kallisto_single {
         set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED
 
     output:
-        path("runId") into KALLISTO_SINGLE
+        path("${runId}") into KALLISTO_SINGLE
 
     script:
         
