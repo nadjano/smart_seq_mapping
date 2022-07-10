@@ -577,7 +577,7 @@ process kallisto_single {
     
     publishDir "$resultsRoot/kallisto", mode: 'copy', overwrite: true
     
-    memory { 4.GB * task.attempt }
+    memory { 20.GB * task.attempt }
     time { 3.hour * task.attempt }
     cpus 8
     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 5 ? 'retry' : 'ignore' }
@@ -614,7 +614,7 @@ process kallisto_paired {
     
     publishDir "$resultsRoot/kallisto", mode: 'copy', overwrite: true
     
-    memory { 4.GB * task.attempt }
+    memory { 20.GB * task.attempt }
     time { 3.hour * task.attempt }
     cpus 8
     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 5? 'retry' : 'ignore' }
