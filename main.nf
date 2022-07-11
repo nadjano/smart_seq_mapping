@@ -587,8 +587,8 @@ process kallisto_single {
         set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED
 
     output:
-         set val (runId), path("${runId}/abundance.h5") into KALLISTO_SINGLE
-        val(runId) into KALLISTO_SINGLE_ID
+        set val(runId), path("${runId}/abundance.h5") into KALLISTO_SINGLE
+        
 
     script:
         
