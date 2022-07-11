@@ -658,7 +658,7 @@ process find_kallisto_results {
         val(runId) from KALLISTO_SINGLE_ID
 
     output:
-        set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
+        file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
      readlink -f  results_smart_seq_trans/kallisto/*/abundance.h5 >> kallisto_results.txt
