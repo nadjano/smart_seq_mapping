@@ -717,8 +717,8 @@ process kallisto_gene_count_matrix {
         // set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
 
     output:
-        set val(protocol), file("counts_mtx") into KALLISTO_CHUNK_COUNT_MATRICES
-        set val(protocol), file("tpm_mtx") into KALLISTO_CHUNK_ABUNDANCE_MATRICES
+        file("counts_mtx") into KALLISTO_CHUNK_COUNT_MATRICES
+        file("tpm_mtx") into KALLISTO_CHUNK_ABUNDANCE_MATRICES
         file("kallisto_stats.tsv") into KALLISTO_CHUNK_STATS
 
     // script:
@@ -773,10 +773,10 @@ process merge_count_chunk_matrices {
     maxRetries 20
     
     input:
-        set val(protocol), file("counts_mtx*") from KALLISTO_CHUNK_COUNT_MATRICES
+        file("counts_mtx*") from KALLISTO_CHUNK_COUNT_MATRICES
 
     output:
-        file("counts_mtx_${protocol}") into PROTOCOL_COUNT_MATRICES
+        file("counts_mtx") into PROTOCOL_COUNT_MATRICES
 
     """
         find \$(pwd) -name 'counts_mtx*' > dirs.txt
