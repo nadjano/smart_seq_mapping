@@ -588,6 +588,7 @@ process kallisto_single {
 
     output:
         set val(runId), path("${runId}") into KALLISTO_SINGLE
+        val(runId) into KALLISTO_SINGLE_ID
         
 
     script:
@@ -646,49 +647,49 @@ process kallisto_paired {
 //     .concat(KALLISTO_PAIRED)
 //     .set{ KALLISTO_RESULTS } 
 
-// Generate the sets of files for each Kallisto sub-directory
+Generate the sets of files for each Kallisto sub-directory
 
-// process find_kallisto_results {
+process find_kallisto_results {
     
-//     executor 'local'
+    executor 'local'
     
-//     input:
-//         path("${runId}") from KALLISTO_RESULTS
-//         val(runId) from KALLISTO_SINGLE_ID
+    input:
+        // path("${runId}") from KALLISTO_SINGLE
+        val(runId) from KALLISTO_SINGLE_ID
 
-//     output:
-//         set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
+    output:
+        set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
-//     """
-//         dir=\$(readlink kallisto)
-//         ls ${runId}/abundance.h5 | while read -r l; do
-//             echo \$(dirname \${dir})/\$l >> kallisto_results.txt
-//         done
-//     """
-// }
+    """
+        dir=\$(readlink kallisto)
+        ls $resultsRoot/kallisto/*/abundance.h5 | while read -r l; do
+            echo \$(dirname \${dir})/\$l >> kallisto_results.txt
+        done
+    """
+}
 
 
-// process chunk_kallisto {
+process chunk_kallisto {
 
-//     executor 'local'
+    executor 'local'
 
-//     input:
-//         set val(protocol), file(kallistoResults) from KALLISTO_RESULT_SETS
+    input:
+        file(kallistoResults) from KALLISTO_RESULT_SETS
 
-//     output: 
-//         file("chunks/*") into KALLISTO_CHUNKS
+    output: 
+        file("chunks/*") into KALLISTO_CHUNKS
 
-//     """
-//         mkdir -p chunks
-//         split -l ${params.chunkSize} ${kallistoResults} chunks/
-//     """
+    """
+        mkdir -p chunks
+        split -l ${params.chunkSize} ${kallistoResults} chunks/
+    """
 
-// }
+}
 // Flatten the chunk list
 
-// KALLISTO_CHUNKS
-//     .transpose()
-//     .set { FLATTENED_KALLISTO_CHUNKS }
+KALLISTO_CHUNKS
+    .transpose()
+    .set { FLATTENED_KALLISTO_CHUNKS }
 
 // Note: we can call tximport in different ways to create different matrix types 
 
@@ -703,7 +704,7 @@ process kallisto_gene_count_matrix {
     maxRetries 20
 
     input:
-        set val (runId), path("${runId}") from KALLISTO_SINGLE
+        file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS 
         file tx2Gene from TRANSCRIPT_TO_GENE.first()
         // set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
 
@@ -725,7 +726,7 @@ process kallisto_gene_count_matrix {
 
             """
          
-            tximport.R --files=${runId} --type=kallisto --tx2gene=${tx2Gene} \
+            tximport.R --files=$${kallistoChunk} --type=kallisto --tx2gene=${tx2Gene} \
                 --countsFromAbundance=$params.scaling --ignoreTxVersion=TRUE --txOut=FALSE \
                 --outputCountsFile=counts_mtx/matrix.mtx \
                 --outputAbundancesFile=tpm_mtx/matrix.mtx \
