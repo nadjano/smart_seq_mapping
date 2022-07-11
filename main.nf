@@ -662,7 +662,7 @@ process find_kallisto_results {
 
     """
     
-    ls /nfs/production/irene/ma/users/nnolte/results_smart_seq_trans/kallisto/*/abundance.h5 >> kallisto_results.txt
+    ls $resultsRoot/kallisto/*/abundance.h5 >> kallisto_results.txt
     
     """
     
