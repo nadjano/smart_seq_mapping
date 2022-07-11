@@ -642,9 +642,9 @@ process kallisto_paired {
         """
 }
 
-KALLISTO_SINGLE
-    .concat(KALLISTO_PAIRED)
-    .set{ KALLISTO_RESULTS } 
+// KALLISTO_SINGLE
+//     .concat(KALLISTO_PAIRED)
+//     .set{ KALLISTO_RESULTS } 
 
 // Generate the sets of files for each Kallisto sub-directory
 
