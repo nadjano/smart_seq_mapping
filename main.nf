@@ -726,7 +726,7 @@ process kallisto_gene_count_matrix {
             """
          
             tximport.R --files=${runId}/abundance.h5 --type=kallisto --tx2gene=${tx2Gene}.csv \
-                --countsFromAbundance=$params.scaling --ignoreTxVersion=\$ignoreTxVersion --txOut=FALSE \
+                --countsFromAbundance=$params.scaling --ignoreTxVersion=TRUE --txOut=FALSE \
                 --outputCountsFile=counts_mtx/matrix.mtx \
                 --outputAbundancesFile=tpm_mtx/matrix.mtx \
                 --outputStatsFile=kallisto_stats.tsv
