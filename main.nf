@@ -587,7 +587,7 @@ process kallisto_single {
         set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED
 
     output:
-        path("${runId}/abundance.h5") into KALLISTO_SINGLE
+         set val (runId), path("${runId}/abundance.h5") into KALLISTO_SINGLE
         val(runId) into KALLISTO_SINGLE_ID
 
     script:
@@ -703,7 +703,7 @@ process kallisto_gene_count_matrix {
     maxRetries 20
 
     input:
-        path("${runId}/abundance.h5") from KALLISTO_RESULTS
+        set val (runId), path("${runId}/abundance.h5") from KALLISTO_RESULTS
         file tx2Gene from TRANSCRIPT_TO_GENE.first()
         // set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
 
