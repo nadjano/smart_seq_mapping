@@ -841,7 +841,7 @@ process cell_metadata {
     
     
     output:
-    set path("counts_mtx"), path("${params.name}.cell_metadata_nonempty.tsv") into FINAL_OUTPUT_NONEMPTY
+    set path("counts_mtx"), path("${params.name}.cell_metadata.tsv") into FINAL_OUTPUT_NONEMPTY
 
     
 
