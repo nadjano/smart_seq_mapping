@@ -647,7 +647,7 @@ process kallisto_paired {
 //     .concat(KALLISTO_PAIRED)
 //     .set{ KALLISTO_RESULTS } 
 
-Generate the sets of files for each Kallisto sub-directory
+// Generate the sets of files for each Kallisto sub-directory
 
 process find_kallisto_results {
     
