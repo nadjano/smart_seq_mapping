@@ -589,7 +589,7 @@ process kallisto_single {
     output:
         // set val(runId), path("${runId}") into KALLISTO_SINGLE
         val(runId) into KALLISTO_SINGLE_ID
-        file(${runId}) into KALLISTO_SINGLE
+        file("${runId}") into KALLISTO_SINGLE
         
 
     script:
@@ -657,14 +657,14 @@ process find_kallisto_results {
     input:
         // path("${runId}") from KALLISTO_SINGLE
         val(runId) from KALLISTO_SINGLE_ID
-        file("${runId}") from KALLISTO_SINGLE
+        file("*") from KALLISTO_SINGLE.collect()
 
     output:
         file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
-    dir=\$(readlink $resultsRoot)
-    ls $resultsRoot/*/abundance.h5 | while read -r l; do
+    dir=\$(readlink /nfs/production/irene/ma/users/nnolte/$resultsRoot)
+    ls */abundance.h5 | while read -r l; do
         echo \$(dirname \${dir})/\$l >> kallisto_results.txt
     done
     """
