@@ -589,7 +589,7 @@ process kallisto_single {
     output:
         set val(runId), path("${runId}") into KALLISTO_SINGLE
         val(runId) into KALLISTO_SINGLE_ID
-        path('kallisto') from KALLISTO_SINGLE
+        path('kallisto') into KALLISTO_SINGLE
         
 
     script:
