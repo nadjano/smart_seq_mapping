@@ -707,7 +707,7 @@ process kallisto_gene_count_matrix {
 
     cache 'deep'
 
-    memory { 2.GB * task.attempt }
+    memory { 10.GB * task.attempt }
     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
     maxRetries 20
 
