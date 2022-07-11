@@ -661,8 +661,10 @@ process find_kallisto_results {
         file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
-     readlink -f /nfs/production/irene/ma/users/nnolte/results_smart_seq_trans/kallisto/*/abundance.h5  >> kallisto_results.txt
- 
+    dir=\$(readlink /nfs/production/irene/ma/users/nnolte/results_smart_seq_trans/kallisto)
+    ls /nfs/production/irene/ma/users/nnolte/results_smart_seq_trans/kallisto/*/abundance.h5 | while read -r l; do
+        echo \$(dirname \${dir})/\$l >> kallisto_results.txt
+    done
     """
     
 }
