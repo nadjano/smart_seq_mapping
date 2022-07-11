@@ -663,7 +663,7 @@ process find_kallisto_results {
         file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
-    dir=\$(readlink /nfs/production/irene/ma/users/nnolte/$resultsRoot)
+    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot)
     ls */abundance.h5 | while read -r l; do
         echo \$(dirname \${dir})/\$l >> kallisto_results.txt
     done
