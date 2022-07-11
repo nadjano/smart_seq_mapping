@@ -661,12 +661,16 @@ process find_kallisto_results {
         set val(protocol), file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
-        dir=\$(readlink kallisto)
-        ls $resultsRoot/kallisto/*/abundance.h5 | while read -r l; do
-            echo \$(dirname \${dir})/\$l >> kallisto_results.txt
-        done
+     readlink -f  results_smart_seq_trans/kallisto/*/abundance.h5 >> kallisto_results.txt
+ 
     """
+    
 }
+
+//  dir=\$(readlink kallisto)
+//         ls $resultsRoot/kallisto/*/abundance.h5 | while read -r l; do
+//             echo \$(dirname \${dir})/\$l >> kallisto_results.txt
+//         done
 
 
 process chunk_kallisto {
