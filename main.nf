@@ -615,7 +615,7 @@ process kallisto_paired {
     
     publishDir "$resultsRoot/kallisto", mode: 'copy', overwrite: true
     
-    memory { 20.GB * task.attempt }
+    memory { 10.GB * task.attempt }
     time { 3.hour * task.attempt }
     cpus 8
     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 5? 'retry' : 'ignore' }
@@ -725,7 +725,7 @@ process kallisto_gene_count_matrix {
 
             """
          
-            tximport.R --files=${runId}/abundance.h5 --type=kallisto --tx2gene=${tx2Gene}.csv \
+            tximport.R --files=${runId}/abundance.h5 --type=kallisto --tx2gene=${tx2Gene} \
                 --countsFromAbundance=$params.scaling --ignoreTxVersion=TRUE --txOut=FALSE \
                 --outputCountsFile=counts_mtx/matrix.mtx \
                 --outputAbundancesFile=tpm_mtx/matrix.mtx \
