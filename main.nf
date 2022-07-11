@@ -589,7 +589,7 @@ process kallisto_single {
     output:
         // set val(runId), path("${runId}") into KALLISTO_SINGLE
         val(runId) into KALLISTO_SINGLE_ID
-        file('kallisto') into KALLISTO_SINGLE
+        file(${runId}) into KALLISTO_SINGLE
         
 
     script:
@@ -605,7 +605,7 @@ process kallisto_single {
         """
             kallisto quant $strandedness -i ${transcriptomeIndex} --single \
                 -l ${params.kallisto.quant.se.l} -s ${params.kallisto.quant.se.s} \
-                -t ${task.cpus} -o kallisto/${runId} ${runFastq}          
+                -t ${task.cpus} -o ${runId} ${runFastq}          
         """
 }
 
@@ -657,14 +657,14 @@ process find_kallisto_results {
     input:
         // path("${runId}") from KALLISTO_SINGLE
         val(runId) from KALLISTO_SINGLE_ID
-        file('kallisto') from KALLISTO_SINGLE
+        file("${runId}") from KALLISTO_SINGLE
 
     output:
         file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
-    dir=\$(readlink kallisto)
-    ls kallisto/*/abundance.h5 | while read -r l; do
+    dir=\$(readlink $resultsRoot)
+    ls $resultsRoot/*/abundance.h5 | while read -r l; do
         echo \$(dirname \${dir})/\$l >> kallisto_results.txt
     done
     """
