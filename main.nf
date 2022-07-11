@@ -587,9 +587,9 @@ process kallisto_single {
         set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED
 
     output:
-        set val(runId), path("${runId}") into KALLISTO_SINGLE
+        // set val(runId), path("${runId}") into KALLISTO_SINGLE
         val(runId) into KALLISTO_SINGLE_ID
-        path('kallisto') into KALLISTO_SINGLE
+        file('kallisto') into KALLISTO_SINGLE
         
 
     script:
@@ -657,15 +657,16 @@ process find_kallisto_results {
     input:
         // path("${runId}") from KALLISTO_SINGLE
         val(runId) from KALLISTO_SINGLE_ID
-        path('kallisto') from KALLISTO_SINGLE
+        file('kallisto') from KALLISTO_SINGLE
 
     output:
         file("kallisto_results.txt") into KALLISTO_RESULT_SETS
 
     """
-    
-    ls kallisto/*/abundance.h5 >> kallisto_results.txt
-    
+    dir=\$(readlink kallisto)
+    ls kallisto/*/abundance.h5 | while read -r l; do
+        echo \$(dirname \${dir})/\$l >> kallisto_results.txt
+    done
     """
     
 }
