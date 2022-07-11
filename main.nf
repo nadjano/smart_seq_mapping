@@ -656,7 +656,6 @@ process find_kallisto_results {
     
     input:
         // path("${runId}") from KALLISTO_SINGLE
-        val(runId) from KALLISTO_SINGLE_ID
         file("*") from KALLISTO_SINGLE.collect()
 
     output:
