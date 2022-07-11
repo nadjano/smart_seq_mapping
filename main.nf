@@ -677,27 +677,27 @@ process find_kallisto_results {
 //         done
 
 
-process chunk_kallisto {
+// process chunk_kallisto {
 
-    executor 'local'
+//     executor 'local'
 
-    input:
-        file(kallistoResults) from KALLISTO_RESULT_SETS
+//     input:
+//         file(kallistoResults) from KALLISTO_RESULT_SETS
 
-    output: 
-        file("chunks/*") into KALLISTO_CHUNKS
+//     output: 
+//         file("chunks/*") into KALLISTO_CHUNKS
 
-    """
-        mkdir -p chunks
-        split -l ${params.chunkSize} ${kallistoResults} chunks/
-    """
+//     """
+//         mkdir -p chunks
+//         split -l ${params.chunkSize} ${kallistoResults} chunks/
+//     """
 
-}
+// }
 // Flatten the chunk list
 
-KALLISTO_CHUNKS
-    .transpose()
-    .set { FLATTENED_KALLISTO_CHUNKS }
+// KALLISTO_CHUNKS
+//     .transpose()
+//     .set { FLATTENED_KALLISTO_CHUNKS }
 
 // Note: we can call tximport in different ways to create different matrix types 
 
@@ -712,7 +712,8 @@ process kallisto_gene_count_matrix {
     maxRetries 20
 
     input:
-        file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS 
+        // file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS 
+        file(kallistoResults) from KALLISTO_RESULT_SETS
         file tx2Gene from TRANSCRIPT_TO_GENE.first()
         // set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
 
