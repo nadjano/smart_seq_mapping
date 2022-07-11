@@ -703,7 +703,7 @@ process kallisto_gene_count_matrix {
     maxRetries 20
 
     input:
-        set val (runId), path("${runId}/abundance.h5") from KALLISTO_RESULTS
+        set val (runId), path("${runId}/abundance.h5") from KALLISTO_SINGLE
         file tx2Gene from TRANSCRIPT_TO_GENE.first()
         // set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
 
