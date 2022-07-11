@@ -875,8 +875,8 @@ process cell_metadata {
 //     """
 // }
 
-KALLISTO_CHUNK_STATS
-    .collectFile( sort: true, name: "kallisto_stats.tsv", storeDir: "${resultsRoot}/matrices", keepHeader: true )
+// KALLISTO_CHUNK_STATS
+//     .collectFile( sort: true, name: "kallisto_stats.tsv", storeDir: "${resultsRoot}/matrices", keepHeader: true )
 
 // Check the total number of runs we have 
 
