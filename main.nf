@@ -665,7 +665,7 @@ process find_kallisto_results {
     """
     dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot)
     ls */abundance.h5 | while read -r l; do
-        echo \$(dirname \${dir})/\$l >> kallisto_results.txt
+        echo \${dir}/\$l >> kallisto_results.txt
     done
     """
     
