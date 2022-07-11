@@ -758,70 +758,70 @@ process kallisto_gene_count_matrix {
 //     .groupTuple()
 //     .set { PROTOCOL_COUNT_CHUNKS }
 
-KALLISTO_CHUNK_ABUNDANCE_MATRICES
-    .groupTuple()
-    .set { PROTOCOL_KALLISTO_ABUNDANCE_CHUNKS }
+// KALLISTO_CHUNK_ABUNDANCE_MATRICES
+//     .groupTuple()
+//     .set { PROTOCOL_KALLISTO_ABUNDANCE_CHUNKS }
 
-process merge_count_chunk_matrices {
+// process merge_count_chunk_matrices {
     
-    conda "${baseDir}/envs/kallisto_matrix.yml"
+//     conda "${baseDir}/envs/kallisto_matrix.yml"
 
-    cache 'lenient'
+//     cache 'lenient'
     
-    memory { 5.GB * task.attempt }
-    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
-    maxRetries 20
+//     memory { 5.GB * task.attempt }
+//     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+//     maxRetries 20
     
-    input:
-        file("counts_mtx*") from KALLISTO_CHUNK_COUNT_MATRICES
+//     input:
+//         file("counts_mtx*") from KALLISTO_CHUNK_COUNT_MATRICES
 
-    output:
-        file("counts_mtx") into PROTOCOL_COUNT_MATRICES
+//     output:
+//         file("counts_mtx") into PROTOCOL_COUNT_MATRICES
 
-    """
-        find \$(pwd) -name 'counts_mtx*' > dirs.txt
-        ndirs=\$(cat dirs.txt | wc -l)
-        if [ "\$ndirs" -gt 1 ]; then 
-            mergeMtx.R dirs.txt counts_mtx_${protocol}
-        else
-            ln -s \$(cat dirs.txt) counts_mtx_${protocol}
-        fi
-        rm -f dirs.txt
-    """
-}
+//     """
+//         find \$(pwd) -name 'counts_mtx*' > dirs.txt
+//         ndirs=\$(cat dirs.txt | wc -l)
+//         if [ "\$ndirs" -gt 1 ]; then 
+//             mergeMtx.R dirs.txt counts_mtx_${protocol}
+//         else
+//             ln -s \$(cat dirs.txt) counts_mtx_${protocol}
+//         fi
+//         rm -f dirs.txt
+//     """
+// }
 
 // Merge the sub-experiments corresponding to different protocols
 
-process merge_protocol_count_matrices {
+// process merge_protocol_count_matrices {
     
-    conda "${baseDir}/envs/kallisto_matrix.yml"
+//     conda "${baseDir}/envs/kallisto_matrix.yml"
 
-    cache 'lenient'
+//     cache 'lenient'
     
-    memory { 5.GB * task.attempt }
-    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
-    maxRetries 20
+//     memory { 5.GB * task.attempt }
+//     errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+//     maxRetries 20
     
-    //publishDir "$resultsRoot/${params.name}/matrices", mode: 'copy', overwrite: true
+//     //publishDir "$resultsRoot/${params.name}/matrices", mode: 'copy', overwrite: true
     
-    input:
-        file('*') from PROTOCOL_COUNT_MATRICES.collect()
+//     input:
+//         file('*') from PROTOCOL_COUNT_MATRICES.collect()
 
-    output:
-        file("counts_mtx") into EXP_COUNT_MATRICES
+//     output:
+//         file("counts_mtx") into EXP_COUNT_MATRICES
 
-    """
-        find \$(pwd) -name 'counts_mtx_*' > dirs.txt
+//     """
+//         find \$(pwd) -name 'counts_mtx_*' > dirs.txt
         
-        ndirs=\$(cat dirs.txt | wc -l)
-        if [ "\$ndirs" -gt 1 ]; then 
-            mergeMtx.R dirs.txt counts_mtx
-        else
-            ln -s \$(cat dirs.txt) counts_mtx
-        fi
-        rm -f dirs.txt
-    """
-}
+//         ndirs=\$(cat dirs.txt | wc -l)
+//         if [ "\$ndirs" -gt 1 ]; then 
+//             mergeMtx.R dirs.txt counts_mtx
+//         else
+//             ln -s \$(cat dirs.txt) counts_mtx
+//         fi
+//         rm -f dirs.txt
+//     """
+// }
 
 process cell_metadata {
 
@@ -837,7 +837,7 @@ process cell_metadata {
     publishDir "$resultsRoot/${params.name}/", mode: 'copy', overwrite: true
 
     input:
-    path("count_mtx") from EXP_COUNT_MATRICES
+    file("counts_mtx") from KALLISTO_CHUNK_COUNT_MATRICES
     
     
     output:
