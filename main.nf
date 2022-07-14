@@ -836,7 +836,7 @@ process kallisto_paired_trans {
     maxRetries 5
 
     input:
-        set val(runId), val(strand), file(read1), file(read2) from PAIRED_FOR_TANS
+        set val(runId), val(strand), file(read1), file(read2) from PAIRED_FOR_TRANS
 
     output:
         file "${runId}" into KALLISTO_PAIRED_TRANS
