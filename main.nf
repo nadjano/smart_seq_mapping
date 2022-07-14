@@ -69,7 +69,7 @@ process make_t2g {
 process index_for_kallisto {
 
     cache 'deep'
-    memory { 10.GB * task.attempt }
+    memory { 20.GB * task.attempt }
     errorStrategy { task.exitStatus !=2 && (task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 3)  ? 'retry' : 'ignore' }
     maxRetries 10
     conda "${baseDir}/envs/kallisto.yml"
@@ -116,7 +116,7 @@ process make_splici {
 process splici_index_for_kallisto {
     
     cache 'deep'
-    memory { 10.GB * task.attempt }
+    memory { 20.GB * task.attempt }
     errorStrategy { task.exitStatus !=2 && (task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 3)  ? 'retry' : 'ignore' }
     maxRetries 10
     conda "${baseDir}/envs/kallisto.yml"
