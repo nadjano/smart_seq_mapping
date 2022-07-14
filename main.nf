@@ -804,7 +804,7 @@ process kallisto_paired_splici {
 
     input:
         set val(runId), val(strand), file(read1), file(read2) from PAIRED_FOR_SPLICI
-        transcriptomeIndex from SPLICI_INDEX_PAIRED
+        path(transcriptomeIndex) from SPLICI_INDEX_PAIRED
 
     output:
         file "${runId}" into   SPLICI_PAIRED_RESULTS
@@ -838,7 +838,7 @@ process kallisto_paired_trans {
 
     input:
         set val(runId), val(strand), file(read1), file(read2) from PAIRED_FOR_TRANS
-        transcriptomeIndex from INDEX_PAIRED
+        path(transcriptomeIndex) from INDEX_PAIRED
 
     output:
         file "${runId}" into KALLISTO_PAIRED_TRANS
