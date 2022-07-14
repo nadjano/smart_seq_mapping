@@ -2,12 +2,16 @@
 
 sdrfFile = params.sdrf
 resultsRoot = params.resultsRoot
-transcriptomeIndex = params.transcriptomeIndex
-transcriptToGene = params.transcriptToGene
+referenceFasta = params.referenceFasta
+referenceGtf = params.referenceGtf
+// transcriptomeIndex = params.transcriptomeIndex
+// transcriptToGene = params.transcriptToGene
 sdrfMeta = params.meta
 cellsFile = params.cells
 
-TRANSCRIPT_TO_GENE= Channel.fromPath(transcriptToGene,checkIfExists: true)
+
+REFERENCE_GENOME = Channel.fromPath(referenceFasta, checkIfExists: true ).first()
+REFERENCE_GTF = Channel.fromPath(referenceGtf, checkIfExists: true ).first()
 
 manualDownloadFolder =''
 if ( params.containsKey('manualDownloadFolder')){
@@ -18,6 +22,124 @@ fastqProviderConfig = ''
 if ( params.containsKey('fastqProviderConfig')){
     fastqProviderConfig = params.fastqProviderConfig
 }
+
+
+// generate spliced transcriptome
+
+process make_cDNA_from_Genome {
+    
+    cache 'lenient'
+   
+    conda "${baseDir}/envs/gff_read.yml"
+
+    memory { 10.GB * task.attempt }
+
+    errorStrategy { task.exitStatus !=2 && (task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 3)  ? 'retry' : 'ignore' }
+    maxRetries 10
+
+    input:
+        path referenceGenome from REFERENCE_GENOME
+        path referenceGtf from REFERENCE_GTF_FOR_CDNA
+
+    output:
+        path("transcriptome.fa") into CUSTOM_CDNA
+       
+    """
+    gffread -F -w transcriptome.fa -g ${referenceGenome}  ${referenceGtf} 
+    """
+}
+
+process make_t2g {
+
+    input:
+    path referenceGtf from REFERENCE_GTF_FOR_T2G
+
+    output:
+    path "t2g_transcriptome.txt" into TRANSCRIPT_TO_GENE
+
+    """
+    cat ${referenceGtf} | grep -vE "^#" | awk '\$3=="transcript" {split(\$0, array, "transcript_id"); print array[2]}' | awk '{split(\$0, array, ";"); print array[1]}' | sed 's/"//g' | sed 's/^ *//g' | sed 's/transcript://g' > t.txt
+    cat ${referenceGtf} | grep -vE "^#" | awk '\$3=="transcript" {split(\$0, array, "gene_id"); print array[2]}' | awk '{split(\$0, array, ";"); print array[1]}' | sed 's/"//g' | sed 's/^ *//g'| sed 's/gene://g'  > g.txt
+    paste t.txt g.txt > t2g_transcriptome.txt
+    """
+
+}
+
+
+process index_for_kallisto {
+
+    cache 'deep'
+    memory { 10.GB * task.attempt }
+    errorStrategy { task.exitStatus !=2 && (task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 3)  ? 'retry' : 'ignore' }
+    maxRetries 10
+    conda "${baseDir}/envs/kallisto.yml"
+
+    input:
+        path reference from CUSTOM_CDNA
+        
+    output:
+        path "kallisto_index" into KALLISTO_INDEX
+    
+  
+    """
+    kallisto index --transcript ${reference}  -i kallisto_index
+    """
+
+ }
+
+// generate splici index if it does not exits
+process make_splici {
+    
+    cache 'lenient'
+   
+    conda "${baseDir}/envs/pyroe.yml"
+
+    memory { 10.GB * task.attempt }
+
+    errorStrategy { task.exitStatus !=2 && (task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 3)  ? 'retry' : 'ignore' }
+    maxRetries 10
+
+    input:
+        path referenceGenome from REFERENCE_GENOME
+        path referenceGtf from REFERENCE_GTF
+
+    output:
+        path("splici_out/splici_fl*.fa") into SPLICI_FASTA
+        path('t2g_splici.tsv') into T2G_SPLICI
+
+    """
+    pyroe make-splici ${referenceGenome} ${referenceGtf} 90 splici_out
+    cat splici_out/splici_fl*.tsv | awk  '{print\$1"\t"\$2}'  > t2g_splici.tsv
+    """
+}
+
+process splici_index_for_kallisto {
+    
+    cache 'deep'
+    memory { 10.GB * task.attempt }
+    errorStrategy { task.exitStatus !=2 && (task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 3)  ? 'retry' : 'ignore' }
+    maxRetries 10
+    conda "${baseDir}/envs/kallisto.yml"
+
+    input:
+        path reference from SPLICI_FASTA
+        
+    output:
+        path "kallisto_index_splici" into KALLSITO_INDEX_SPLICI
+    
+  
+    """
+    kallisto index --transcript ${reference}  -i kallisto_index_splici
+    """
+
+ }
+
+
+// gerneate splici
+
+// gereate trans index
+
+// generate splici index
 
 // Read ENA_RUN column from an SDRF
 
@@ -569,13 +691,32 @@ process synchronise_pairs {
     """          
 }
 
+UNPAIRED.into{
+    UNPAIRED_FOR_SPLICI
+    UNPAIRED_FOR_TANS
+}
+
+MATCHED_PAIRED_FASTQS.into{
+    PAIRED_FOR_SPLICI
+    PAIRED_FOR_TANS
+}
+
+KALLISTO_INDEX.into{
+    INDEX_UNPAIRED
+    INDEX_PAIRED
+}
+
+KALLSITO_INDEX_SPLICI.into{
+    SPLICI_INDEX_UNPAIRED
+    SPLICI_INDEX_PAIRED
+}
 // Run Kallisto for each single- read file
 
-process kallisto_single {
+process kallisto_single_splici {
 
     conda "${baseDir}/envs/kallisto.yml"
     
-    publishDir "$resultsRoot/kallisto", mode: 'copy', overwrite: true
+    publishDir "$resultsRoot/${params.name}/kallisto_splici", mode: 'copy', overwrite: true
     
     memory { 20.GB * task.attempt }
     time { 3.hour * task.attempt }
@@ -584,12 +725,50 @@ process kallisto_single {
     maxRetries 5
 
     input:
-        set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED
+        set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED_FOR_SPLICI
+        path(transcriptomeIndex) from SPLICI_INDEX_UNPAIRED
 
     output:
         // set val(runId), path("${runId}") into KALLISTO_SINGLE
-        val(runId) into KALLISTO_SINGLE_ID
-        file("${runId}") into KALLISTO_SINGLE
+        file("${runId}") into KALLISTO_SINGLE_SPLICI_RESULTS
+        
+
+    script:
+        
+        def strandedness = ''
+
+        if ( strand == 'first strand' ){
+            strandedness = '--fr-stranded'
+        }else if ( strand == 'second strand' ){
+            strandedness = '--rf-stranded'
+        }
+
+        """
+            kallisto quant $strandedness -i ${transcriptomeIndex} --single \
+                -l ${params.kallisto.quant.se.l} -s ${params.kallisto.quant.se.s} \
+                -t ${task.cpus} -o ${runId} ${runFastq}          
+        """
+}
+
+process kallisto_single_trans {
+
+    conda "${baseDir}/envs/kallisto.yml"
+    
+    publishDir "$resultsRoot/${params.name}/kallisto_trans", mode: 'copy', overwrite: true
+    
+    memory { 20.GB * task.attempt }
+    time { 3.hour * task.attempt }
+    cpus 8
+    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 5 ? 'retry' : 'ignore' }
+    maxRetries 5
+
+    input:
+        set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED_FOR_TRANS
+        path(transcriptomeIndex) from INDEX_UNPAIRED
+
+    output:
+        // set val(runId), path("${runId}") into KALLISTO_SINGLE
+        file("${runId}") into KALLISTO_SINGLE_TRANS_REUSLTS
         
 
     script:
@@ -611,11 +790,11 @@ process kallisto_single {
 
 // Run Kallisto for each synchronised paired-end read set
 
-process kallisto_paired {
+process kallisto_paired_splici {
 
     conda "${baseDir}/envs/kallisto.yml"
     
-    publishDir "$resultsRoot/kallisto", mode: 'copy', overwrite: true
+    publishDir "$resultsRoot/${params.name}/kallisto_splici", mode: 'copy', overwrite: true
     
     memory { 10.GB * task.attempt }
     time { 3.hour * task.attempt }
@@ -624,10 +803,10 @@ process kallisto_paired {
     maxRetries 5
 
     input:
-        set val(runId), val(strand), file(read1), file(read2) from MATCHED_PAIRED_FASTQS
+        set val(runId), val(strand), file(read1), file(read2) from PAIRED_FOR_SPLICI
 
     output:
-        file "${runId}" into KALLISTO_PAIRED
+        file "${runId}" into   SPLICI_PAIRED_RESULTS
 
     script:
         
@@ -644,28 +823,100 @@ process kallisto_paired {
         """
 }
 
-// KALLISTO_SINGLE
-//     .concat(KALLISTO_PAIRED)
-//     .set{ KALLISTO_RESULTS } 
+rocess kallisto_paired_trans {
+
+    conda "${baseDir}/envs/kallisto.yml"
+    
+    publishDir "$resultsRoot/${params.name}/kallisto_trans", mode: 'copy', overwrite: true
+    
+    memory { 10.GB * task.attempt }
+    time { 3.hour * task.attempt }
+    cpus 8
+    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 5? 'retry' : 'ignore' }
+    maxRetries 5
+
+    input:
+        set val(runId), val(strand), file(read1), file(read2) from PAIRED_FOR_TANS
+
+    output:
+        file "${runId}" into KALLISTO_PAIRED_TRANS
+
+    script:
+        
+        def strandedness = ''
+
+        if ( strand == 'first strand' ){
+            strandedness = '--fr-stranded'
+        }else if ( strand == 'second strand' ){
+            strandedness = '--rf-stranded'
+        }
+
+        """
+            kallisto quant ${strandedness} -i ${transcriptomeIndex} -t ${task.cpus} -o ${runId} ${read1} ${read2}   
+            MR_PSEUDO=\$(grep '"p_pseudoaligned"' run_info.json | sed 's/,//g' | awk -F': ' '{print \$2}' | sort -n | head -n 1)  
+            MR_UNIQUE=\$(grep '"p_unique"' run_info.json | sed 's/,//g' | awk -F': ' '{print \$2}' | sort -n | head -n 1)    
+        """
+}
+
+KALLISTO_SINGLE_TRANS_REUSLTS
+    .concat(KALLISTO_PAIRED_TRANS)
+    .set{ KALLISTO_RESULTS_TRANS }
+
+
+
+
+KALLISTO_SINGLE_SPLICI_RESULTS
+    .concat(KALLISTO_PAIRED_TRANS)
+    .set{ KALLISTO_RESULTS_SPLICI} 
 
 // Generate the sets of files for each Kallisto sub-directory
 
-process find_kallisto_results {
+process find_kallisto_results_trans {
     
     executor 'local'
+
+    publishDir "$resultsRoot/${params.name}/trans/", mode: 'copy', overwrite: true
     
     input:
         // path("${runId}") from KALLISTO_SINGLE
-        file("*") from KALLISTO_SINGLE.collect()
+        file("*") from KALLISTO_RESULTS_TRANS.collect()
 
     output:
-        file("kallisto_results.txt") into KALLISTO_RESULT_SETS
+        file("kallisto_results.txt") into KALLISTO_RESULT_SETS_TRANS
 
     """
     dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto)
     ls */abundance.h5 | while read -r l; do
         echo \${dir}/\$l >> kallisto_results.txt
     done
+
+    cat */run_info.json |grep '"p_pseudoaligned"' | sed 's/,//g' | awk -F': ' '{print $2}' > mapping_rates_trans.txt 
+    
+    """
+    
+}
+
+process find_kallisto_results_splici {
+
+    publishDir "$resultsRoot/${params.name}/splici/", mode: 'copy', overwrite: true
+    
+    executor 'local'
+    
+    input:
+        // path("${runId}") from KALLISTO_SINGLE
+        file("*") from KALLISTO_RESULTS_SPLICI.collect()
+
+    output:
+        file("kallisto_results.txt") into KALLISTO_RESULT_SETS_SPLICI
+        file("mapping_rates_splici.txt") into MAPPING_RATES_SPLICI
+
+    """
+    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto)
+    ls */abundance.h5 | while read -r l; do
+        echo \${dir}/\$l >> kallisto_results.txt
+    done
+
+    cat */run_info.json |grep '"p_pseudoaligned"' | sed 's/,//g' | awk -F': ' '{print $2}' > mapping_rates_splici.txt 
     """
     
 }
@@ -700,9 +951,10 @@ process find_kallisto_results {
 
 // Note: we can call tximport in different ways to create different matrix types 
 
-process kallisto_gene_count_matrix {
+process kallisto_gene_count_matrix_splici {
     
     conda "${baseDir}/envs/kallisto_matrix.yml"
+    publishDir "$resultsRoot/${params.name}/splici", mode: 'copy', overwrite: true
 
     cache 'deep'
 
@@ -712,14 +964,59 @@ process kallisto_gene_count_matrix {
 
     input:
         // file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS 
-        file(kallistoResults) from KALLISTO_RESULT_SETS
-        file tx2Gene from TRANSCRIPT_TO_GENE.first()
+        file(kallistoResults) from KALLISTO_RESULT_SETS_SPLICI
+        file tx2Gene from T2G_SPLICI
         // set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
 
     output:
-        file("counts_mtx") into KALLISTO_CHUNK_COUNT_MATRICES
-        file("tpm_mtx") into KALLISTO_CHUNK_ABUNDANCE_MATRICES
-        file("kallisto_stats.tsv") into KALLISTO_CHUNK_STATS
+        file("counts_mtx") into KALLISTO_CHUNK_COUNT_MATRICES_SPLICI
+        // file("tpm_mtx") into KALLISTO_CHUNK_ABUNDANCE_MATRICES_SPLICI
+        // file("kallisto_stats.tsv") into KALLISTO_CHUNK_STATS_SPLICI
+
+    // script:
+
+    //     def txOut
+    //     if ( expressionLevel == 'transcript' ){
+    //         txOut = 'TRUE'
+    //     }else{
+    //         txOut = 'FALSE'
+    //     }
+
+        script:
+
+            """
+            sed -e 's/\t/,/g' ${tx2Gene} > ${tx2Gene}.csv
+            tximport.R --files=${kallistoResults} --type=kallisto --tx2gene=${tx2Gene}.csv \
+                --countsFromAbundance=$params.scaling --ignoreTxVersion=TRUE --txOut=FALSE \
+                --outputCountsFile=counts_mtx/matrix.mtx \
+                --outputAbundancesFile=tpm_mtx/matrix.mtx \
+                --outputStatsFile=kallisto_stats.tsv
+            """
+}
+
+
+process kallisto_gene_count_matrix_trans {
+    
+    conda "${baseDir}/envs/kallisto_matrix.yml"
+    publishDir "$resultsRoot/${params.name}/trans", mode: 'copy', overwrite: true
+
+
+    cache 'deep'
+
+    memory { 10.GB * task.attempt }
+    errorStrategy { task.exitStatus == 130 || task.exitStatus == 137 ? 'retry' : 'finish' }
+    maxRetries 20
+
+    input:
+        // file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS 
+        file(kallistoResults) from KALLISTO_RESULT_SETS_TRANS
+        file tx2Gene from TRANSCRIPT_TO_GENE
+        // set val(protocol), file(kallistoChunk) from FLATTENED_KALLISTO_CHUNKS        
+
+    output:
+        file("counts_mtx") into KALLISTO_CHUNK_COUNT_MATRICES_TRANS
+        // file("tpm_mtx") into KALLISTO_CHUNK_ABUNDANCE_MATRICES_TRANS
+        // file("kallisto_stats.tsv") into KALLISTO_CHUNK_STATS_TRANS
 
     // script:
 
@@ -841,7 +1138,7 @@ process cell_metadata {
     
     
     output:
-    set path("counts_mtx"), path("${params.name}.cell_metadata.tsv") into FINAL_OUTPUT_NONEMPTY
+    path("${params.name}.cell_metadata.tsv") into FINAL_OUTPUT_NONEMPTY
 
     
 
@@ -850,6 +1147,7 @@ process cell_metadata {
     """ 
   
 }
+
 
 // process merge_tpm_chunk_matrices {
 
