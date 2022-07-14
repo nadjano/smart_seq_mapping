@@ -885,12 +885,14 @@ process find_kallisto_results_trans {
         file("kallisto_results.txt") into KALLISTO_RESULT_SETS_TRANS
 
     """
-    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto)
+    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto_trans)
     ls */abundance.h5 | while read -r l; do
         echo \${dir}/\$l >> kallisto_results.txt
     done
 
-    cat */run_info.json |grep '"p_pseudoaligned"' | sed 's/,//g' | awk -F': ' '{print $2}' > mapping_rates_trans.txt 
+    cat */run_info.json |grep '"p_pseudoaligned"' | sed 's/,//g' | awk -F': ' '{print \$2}' > mapping_rates_trans.txt 
+    cat */run_info.json |grep '"p_unique"' | sed 's/,//g' | awk -F': ' '{print \$2}' > unique_mapping_rates_trans.txt 
+   
     
     """
     
@@ -911,12 +913,14 @@ process find_kallisto_results_splici {
         file("mapping_rates_splici.txt") into MAPPING_RATES_SPLICI
 
     """
-    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto)
+    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto_splici)
     ls */abundance.h5 | while read -r l; do
         echo \${dir}/\$l >> kallisto_results.txt
     done
 
-    cat */run_info.json |grep '"p_pseudoaligned"' | sed 's/,//g' | awk -F': ' '{print $2}' > mapping_rates_splici.txt 
+    cat */run_info.json |grep '"p_pseudoaligned"' | sed 's/,//g' | awk -F': ' '{print \$2}' > mapping_rates_splici.txt 
+    cat */run_info.json |grep '"p_unique"' | sed 's/,//g' | awk -F': ' '{print \$2}' > uniquemapping_rates_trans.txt 
+   
     """
     
 }
