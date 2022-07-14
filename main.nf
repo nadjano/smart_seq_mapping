@@ -1136,7 +1136,7 @@ process cell_metadata {
     publishDir "$resultsRoot/${params.name}/", mode: 'copy', overwrite: true
 
     input:
-    file("counts_mtx") from KALLISTO_CHUNK_COUNT_MATRICES
+    file("counts_mtx") from KALLISTO_CHUNK_COUNT_MATRICES_TRANS
     
     
     output:
