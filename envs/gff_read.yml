@@ -1,0 +1,6 @@
+
+name: gff_read_with_kb
+dependencies:
+  - bioconda::gffread 
+  - conda-forge::scanpy 
+  - bioconda::kb-python 
