@@ -52,7 +52,7 @@ process make_cDNA_from_Genome {
 process make_t2g {
 
     input:
-    path referenceGtf from REFERENCE_GTF_FOR_T2G
+    path referenceGtf from REFERENCE_GTF
 
     output:
     path "t2g_transcriptome.txt" into TRANSCRIPT_TO_GENE
