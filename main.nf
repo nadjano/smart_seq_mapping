@@ -823,7 +823,7 @@ process kallisto_paired_splici {
         """
 }
 
-rocess kallisto_paired_trans {
+process kallisto_paired_trans {
 
     conda "${baseDir}/envs/kallisto.yml"
     
