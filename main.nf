@@ -39,7 +39,7 @@ process make_cDNA_from_Genome {
 
     input:
         path referenceGenome from REFERENCE_GENOME
-        path referenceGtf from REFERENCE_GTF_FOR_CDNA
+        path referenceGtf from REFERENCE_GTF
 
     output:
         path("transcriptome.fa") into CUSTOM_CDNA
