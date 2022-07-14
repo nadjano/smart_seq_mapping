@@ -853,8 +853,6 @@ process kallisto_paired_trans {
 
         """
             kallisto quant ${strandedness} -i ${transcriptomeIndex} -t ${task.cpus} -o ${runId} ${read1} ${read2}   
-            MR_PSEUDO=\$(grep '"p_pseudoaligned"' run_info.json | sed 's/,//g' | awk -F': ' '{print \$2}' | sort -n | head -n 1)  
-            MR_UNIQUE=\$(grep '"p_unique"' run_info.json | sed 's/,//g' | awk -F': ' '{print \$2}' | sort -n | head -n 1)    
         """
 }
 
@@ -866,7 +864,7 @@ KALLISTO_SINGLE_TRANS_REUSLTS
 
 
 KALLISTO_SINGLE_SPLICI_RESULTS
-    .concat(KALLISTO_PAIRED_TRANS)
+    .concat(SPLICI_PAIRED_RESULTS)
     .set{ KALLISTO_RESULTS_SPLICI} 
 
 // Generate the sets of files for each Kallisto sub-directory
