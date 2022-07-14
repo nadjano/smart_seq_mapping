@@ -764,7 +764,7 @@ process kallisto_single_trans {
 
     input:
         set val(runId), val(strand), val(layout), file(runFastq) from UNPAIRED_FOR_TRANS
-        path(transcriptomeIndex) from INDEX_UNPAIRED
+        path "kallisto_index" from INDEX_UNPAIRED
 
     output:
         // set val(runId), path("${runId}") into KALLISTO_SINGLE
@@ -782,7 +782,7 @@ process kallisto_single_trans {
         }
 
         """
-            kallisto quant $strandedness -i ${transcriptomeIndex} --single \
+            kallisto quant $strandedness -i kallisto_index --single \
                 -l ${params.kallisto.quant.se.l} -s ${params.kallisto.quant.se.s} \
                 -t ${task.cpus} -o ${runId} ${runFastq}          
         """
@@ -838,7 +838,7 @@ process kallisto_paired_trans {
 
     input:
         set val(runId), val(strand), file(read1), file(read2) from PAIRED_FOR_TRANS
-        path(transcriptomeIndex) from INDEX_PAIRED
+        path("kallisto_index") from INDEX_PAIRED 
 
     output:
         file "${runId}" into KALLISTO_PAIRED_TRANS
@@ -854,7 +854,7 @@ process kallisto_paired_trans {
         }
 
         """
-            kallisto quant ${strandedness} -i ${transcriptomeIndex} -t ${task.cpus} -o ${runId} ${read1} ${read2}   
+            kallisto quant ${strandedness} -i kallisto_index -t ${task.cpus} -o ${runId} ${read1} ${read2}   
         """
 }
 
