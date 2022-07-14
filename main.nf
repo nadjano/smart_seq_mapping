@@ -693,7 +693,7 @@ process synchronise_pairs {
 
 UNPAIRED.into{
     UNPAIRED_FOR_SPLICI
-    UNPAIRED_FOR_TANS
+    UNPAIRED_FOR_TRANS
 }
 
 MATCHED_PAIRED_FASTQS.into{
