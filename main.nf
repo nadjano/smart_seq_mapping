@@ -82,7 +82,7 @@ process index_for_kallisto {
     
   
     """
-    kallisto index --transcript ${reference}  -i kallisto_index
+    kallisto index ${reference}  --index kallisto_index
     """
 
  }
@@ -129,7 +129,7 @@ process splici_index_for_kallisto {
     
   
     """
-    kallisto index --transcript ${reference}  -i kallisto_index_splici
+    kallisto index ${reference}  --index kallisto_index_splici
     """
 
  }
