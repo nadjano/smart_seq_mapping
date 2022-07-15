@@ -116,7 +116,7 @@ process make_splici {
 process splici_index_for_kallisto {
     
     cache 'deep'
-    memory { 20.GB * task.attempt }
+    memory { 100.GB * task.attempt }
     errorStrategy { task.exitStatus !=2 && (task.exitStatus == 130 || task.exitStatus == 137 || task.attempt < 3)  ? 'retry' : 'ignore' }
     maxRetries 10
     conda "${baseDir}/envs/kallisto.yml"
@@ -863,8 +863,6 @@ KALLISTO_SINGLE_TRANS_REUSLTS
     .set{ KALLISTO_RESULTS_TRANS }
 
 
-
-
 KALLISTO_SINGLE_SPLICI_RESULTS
     .concat(SPLICI_PAIRED_RESULTS)
     .set{ KALLISTO_RESULTS_SPLICI} 
@@ -885,7 +883,7 @@ process find_kallisto_results_trans {
         file("kallisto_results.txt") into KALLISTO_RESULT_SETS_TRANS
 
     """
-    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto_trans)
+    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/${params.name}/kallisto_trans)
     ls */abundance.h5 | while read -r l; do
         echo \${dir}/\$l >> kallisto_results.txt
     done
@@ -913,7 +911,7 @@ process find_kallisto_results_splici {
         file("mapping_rates_splici.txt") into MAPPING_RATES_SPLICI
 
     """
-    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/kallisto_splici)
+    dir=(/nfs/production/irene/ma/users/nnolte/$resultsRoot/${params.name}/kallisto_splici)
     ls */abundance.h5 | while read -r l; do
         echo \${dir}/\$l >> kallisto_results.txt
     done
